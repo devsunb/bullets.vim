@@ -5,15 +5,15 @@ require 'spec_helper'
 RSpec.describe 'Bullets.vim' do
   describe 'inserting new bullets' do
     context 'on return key when cursor is not at EOL' do
-      it 'splits the line and does not add a bullet' do
+      it 'splits the line and trim' do
         filename = "#{SecureRandom.hex(6)}.txt"
         write_file(filename, <<-TEXT)
           # Hello there
-          - this is the first bullet
+          - this is the first bulle  t
         TEXT
 
         vim.edit filename
-        vim.type 'G$i'
+        vim.type 'G$hi'
         vim.feedkeys '\<cr>'
         vim.type 'second bullet'
         vim.write
@@ -23,7 +23,7 @@ RSpec.describe 'Bullets.vim' do
         expect(file_contents).to eq normalize_string_indent(<<-TEXT)
           # Hello there
           - this is the first bulle
-          second bullett\n
+          - second bullett\n
         TEXT
       end
     end

@@ -566,9 +566,8 @@ fun! s:insert_new_bullet()
   let l:normal_mode = mode() ==# 'n'
   let l:indent_next = s:line_ends_in_colon(l:curr_line_num) && g:bullets_auto_indent_after_colon
 
-  " check if current line is a bullet and we are at the end of the line (for
-  " insert mode only)
-  if l:bullet != {} && (l:normal_mode || s:is_at_eol())
+  " check if current line is a bullet
+  if l:bullet != {}
     " was any text entered after the bullet?
     if l:bullet.text_after_bullet ==# ''
       " We don't want to create a new bullet if the previous one was not used,
@@ -590,6 +589,21 @@ fun! s:insert_new_bullet()
         let l:next_bullet_list = [s:pad_to_length(l:next_bullet, l:bullet.bullet_length)]
       endif
 
+      " Handle text splitting when not at end of line
+      let l:after_cursor = ''
+      if !l:normal_mode && !s:is_at_eol()
+        let l:curr_pos = col('.')
+        let l:curr_line = getline(l:curr_line_num)
+        let l:before_cursor = trim(strpart(l:curr_line, 0, l:curr_pos - 1), '', 2)
+        let l:after_cursor = trim(strpart(l:curr_line, l:curr_pos - 1), '', 1)
+
+        " Update current line with text before cursor
+        call setline(l:curr_line_num, l:before_cursor)
+
+        " Add the text after cursor to the new bullet line
+        let l:next_bullet_list[0] = l:next_bullet_list[0] . l:after_cursor
+      endif
+
       " prepend blank lines if desired
       if g:bullets_line_spacing > 1
         let l:next_bullet_list += map(range(g:bullets_line_spacing - 1), '""')
@@ -599,9 +613,8 @@ fun! s:insert_new_bullet()
       " insert next bullet
       call append(l:curr_line_num, l:next_bullet_list)
 
-
       " go to next line after the new bullet
-      let l:col = strlen(getline(l:next_line_num)) + 1
+      let l:col = strlen(getline(l:next_line_num)) - strlen(l:after_cursor) + 1
       call setpos('.', [0, l:next_line_num, l:col])
 
       " indent if previous line ended in a colon
