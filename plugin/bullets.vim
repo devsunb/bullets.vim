@@ -981,6 +981,7 @@ command! RenumberList call <SID>renumber_whole_list()
 fun! s:change_line_bullet_level(direction, lnum)
   let l:curr_line = s:parse_bullet(a:lnum, getline(a:lnum))
   let l:curr_bullet = s:resolve_bullet_type(l:curr_line)
+  let l:line_text = getline(a:lnum)
 
   if a:direction == 1
     if l:curr_bullet != {} && indent(a:lnum) == 0
@@ -991,7 +992,14 @@ fun! s:change_line_bullet_level(direction, lnum)
       execute a:lnum . 'normal! <<'
     endif
   else
-    execute a:lnum . 'normal! >>'
+    " Check if line is empty or only whitespace
+    if l:line_text =~# '^$'
+      " For empty lines when demoting, manually add shiftwidth spaces
+      let l:spaces = repeat(' ', shiftwidth())
+      call setline(a:lnum, l:spaces . l:line_text)
+    else
+      execute a:lnum . 'normal! >>'
+    endif
   endif
 
   if l:curr_bullet == {}
